@@ -28,9 +28,7 @@ class PortfolioApp {
 
     // 3. Initialize 3D Galaxy & Floating Tech Polyhedrons
     const canvasContainer = document.getElementById('webgl-canvas-container');
-    this.galaxyScene = new GalaxyScene(canvasContainer, (skill) => {
-      this.modalManager.showSkillDetail(skill);
-    });
+    this.galaxyScene = new GalaxyScene(canvasContainer, null);
 
     // 4. Bind UI Event Handlers
     this.bindEvents();

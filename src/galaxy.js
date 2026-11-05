@@ -123,7 +123,6 @@ export class GalaxyScene {
     window.addEventListener('mousemove', this.onMouseMove.bind(this));
     window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: true });
     window.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: true });
-    window.addEventListener('click', this.onClick.bind(this));
 
     // 6. Animation Loop
     this.animate();
@@ -494,12 +493,6 @@ export class GalaxyScene {
       `;
       this.labelsContainer.appendChild(label);
 
-      // Interactive click on label
-      label.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.onSkillClick) this.onSkillClick(skill);
-      });
-
       // Save node data
       this.polyhedronNodes.push({
         skill,
@@ -548,20 +541,7 @@ export class GalaxyScene {
     }
   }
 
-  onClick(e) {
-    if (e && e.clientX !== undefined && e.clientY !== undefined) {
-      this.mouseVector.x = (e.clientX / window.innerWidth) * 2 - 1;
-      this.mouseVector.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    }
-    this.raycaster.setFromCamera(this.mouseVector, this.camera);
-    for (const node of this.polyhedronNodes) {
-      const intersects = this.raycaster.intersectObject(node.mesh);
-      if (intersects.length > 0) {
-        if (this.onSkillClick) this.onSkillClick(node.skill);
-        break;
-      }
-    }
-  }
+  onClick(e) {}
 
   onWindowResize() {
     this.windowHalfX = window.innerWidth / 2;
@@ -621,19 +601,7 @@ export class GalaxyScene {
       this.starfieldPoints.rotation.y = elapsedTime * 0.005;
     }
 
-    // 4. Update Raycaster for Hover detection
-    this.raycaster.setFromCamera(this.mouseVector, this.camera);
-    let hitNode = null;
-
-    for (const node of this.polyhedronNodes) {
-      const intersects = this.raycaster.intersectObject(node.mesh);
-      if (intersects.length > 0) {
-        hitNode = node;
-        break;
-      }
-    }
-
-    // 5. Update Polyhedron Rotations, Float, Scales & Screen Labels
+    // 4. Update Polyhedron Rotations, Float, Scales & Screen Labels
     const tempVec = new THREE.Vector3();
     const currentThemeData = GALAXY_THEMES[this.currentTheme];
 
@@ -657,24 +625,15 @@ export class GalaxyScene {
       node.mesh.rotation.x = node.wireframe.rotation.x;
       node.mesh.rotation.y = node.wireframe.rotation.y;
 
-      // Hover reaction
-      const isHovered = (hitNode === node);
-      node.targetScale = isHovered ? 1.3 : 1.0;
-      node.currentScale += (node.targetScale - node.currentScale) * 0.12;
-      node.wireframe.scale.set(node.currentScale, node.currentScale, node.currentScale);
-      node.mesh.scale.set(node.currentScale, node.currentScale, node.currentScale);
-
-      if (isHovered) {
-        node.wireframeMat.color.set(currentThemeData.wireframeHover);
-        node.facetMat.opacity = 0.28;
-      } else {
-        node.wireframeMat.color.set(0xdbeafe);
-        node.facetMat.opacity = 0.08;
-      }
+      // Pure static element: constant scale, clean wireframe
+      node.wireframe.scale.set(1.0, 1.0, 1.0);
+      node.mesh.scale.set(1.0, 1.0, 1.0);
+      node.wireframeMat.color.set(0xdbeafe);
+      node.facetMat.opacity = 0.08;
 
       // Project 3D position to 2D Screen for Label using world position
       node.group.getWorldPosition(tempVec);
-      tempVec.y -= (isMobile ? 0.13 : 0.28) * node.currentScale;
+      tempVec.y -= (isMobile ? 0.13 : 0.28);
       tempVec.project(this.camera);
 
       // Check if within screen bounds and in front of camera
@@ -685,11 +644,6 @@ export class GalaxyScene {
       if (!isBehind) {
         node.label.style.transform = `translate(-50%, -50%) translate3d(${screenX}px, ${screenY}px, 0)`;
         node.label.style.display = 'block';
-        if (isHovered) {
-          node.label.classList.add('hovered');
-        } else {
-          node.label.classList.remove('hovered');
-        }
       } else {
         node.label.style.display = 'none';
       }
